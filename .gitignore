@@ -1,0 +1,10 @@
+*.txt
+\_pycache_
+\.idea
+\.git
+__pycache__/functions.cpython-38.pyc
+debug.txt
+settings.txt
+*.txt
+functions-backup.py
+stockalert-backup.py
