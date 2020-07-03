@@ -1049,7 +1049,6 @@ def get_update():
         back_file1.write(data)
     for data in backup2:
         back_file2.write(data)
-    print("*Success")
     print("*Getting Update")
     stock_alert = requests.get("https://raw.github.com/joelspiers/stonks/master/stockalert.py")
     file1 = open("stockalert.py", "wb")
