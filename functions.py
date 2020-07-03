@@ -294,7 +294,7 @@ def sell_high(a_stock):
                     read_settings()
                     return confirmation
                 last_price = stocks[i].price
-                s.mixer.music.load("/home/pi/Desktop/stonks/alarm.mp3")
+                s.mixer.music.load("alarm.mp3")
                 s.mixer.music.play()
             elif stocks[i].price < stocks[i].sell_price and check is True:
                 return confirmation
@@ -428,7 +428,7 @@ def buy_low(a_stock):
                     update_holdings()
                     return confirmation
                 last_price = stocks[i].price
-                s.mixer.music.load("/home/pi/Desktop/stonks/alarm.mp3")
+                s.mixer.music.load("alarm.mp3")
                 s.mixer.music.play()
             elif stocks[i].price > stocks[i].buy_price and check is True:
                 stocks[i].set_invested(False)
