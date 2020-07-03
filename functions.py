@@ -699,7 +699,7 @@ def get_current_stocks():
             if stocks[i].quantity > 0:
                 s.mixer.music.load("fuckme.mp3")
                 s.mixer.music.play()
-                if stocks[i].x_up == 1 and stocks[i].x_down == 2:
+                if stocks[i].x_up == 1 and stocks[i].x_down == 1:
                     quick_sell_all()
                     return get_current_stocks()
         if stocks[i].price > stocks[i].high:
