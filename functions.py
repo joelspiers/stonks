@@ -12,13 +12,14 @@ totalEquity = 0.0
 slowCheck, medCheck, fastCheck = 1800, 900, 450
 percentage = [1.02, 1.05]
 lowPercentage = [0.99, 0.98]
-baseHigh = 1.025
+baseHigh = 1.2
 baseLowCrypto = 0.98
 baseLow = 1.01
 risk = 0.18
 adjust = 0
 buyMode = 0
-crazyCrypto = 0
+autoStart = 0
+crazyCrypto = 1
 buyPower = 0.0
 init_hold = {}
 init_crypto = []
@@ -27,6 +28,7 @@ system = ""
 favorite = "ERI"
 clock = time.ctime().split()[3]
 flagType = {"flag": False, "type": 0}
+buyFlagType = {"flag": False, "type": 0}
 
 
 def refresh():
@@ -171,6 +173,7 @@ class Stock:
         self.done_once = False
         self.x_down = 0
         self.x_up = 0
+        self.max_up = 0
         if self.price == 0:
             self.gain = 0
         else:
@@ -196,7 +199,7 @@ class Stock:
 
     def set_high(self, x):
         self.high = x
-        self.x_up = 1
+        self.max_up = 1
 
     def set_quantity(self, x):
         self.quantity = x
@@ -216,11 +219,15 @@ class Stock:
     def set_down(self):
         self.down = True
         self.x_down = self.x_down + 1
+        if self.x_up != 0:
+            self.x_up = self.x_up - 1
 
     def set_up(self):
         self.up = True
+        self.x_up = self.x_up + 1
         if self.x_down != 0:
             self.x_down = self.x_down - 1
+
     def set_invested(self, x):
         self.invested = x
         if x is False:
@@ -338,6 +345,7 @@ def man_sell_all():
         print(str(success)+" sold successfully!")
         print(str(failed)+" attempt failed")
         print("")
+        time.sleep(30)
         reset()
         update_holdings()
         return confirmation
@@ -348,25 +356,26 @@ def man_buy_all(): # todo create a function that will buy on up trend day
     global stocks, flagType, crazyCrypto, favorite, risk, totalEquity, buyPower
     success = 0
     failed = 0
-
+    diverse = totalEquity * risk
     for data in stocks:
-        if flagType[data.sector] <= 0:
+        if buyFlagType[data.sector] <= 0:
             continue
         confirmation = "Nothing Happened"
-        if data.invested is False and data.name == favorite:  # re-add price >= buy price
+        if data.invested is True and data.name == favorite:  # re-add price >= buy price
+            qty = int(diverse / data.price)
             confirmation = r.order_buy_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
-            crazyCrypto = 1  # stop buying of stocks while market crash
         if confirmation != "Nothing Happened":
             success = success + 1
         else:
             failed = failed + 1
         if failed > 0:
-            flagType["flag"] = True
+            buyFlagType["flag"] = True
         else:
-            flagType["flag"] = False
+            buyFlagType["flag"] = False
         print(str(success)+" sold successfully!")
         print(str(failed)+" attempt failed")
         print("")
+        time.sleep(30)
         reset()
         update_holdings()
         return confirmation
@@ -607,8 +616,10 @@ def update_stocks():
         else:
             break
     i = 0
+    buy_points = 0
     flag_points = 0
     owned_flags = 0
+    fav_flags = 0
     x = 0
     total_owned = 0
     num_stocks = len(stocks)
@@ -620,6 +631,7 @@ def update_stocks():
         if done is True:
             data.sector = stock_type[i]
             flagType[data.sector] = 0
+            buyFlagType[data.sector] = 0
         if data.x_down >= 2:
             flagType[data.sector] = flagType[data.sector] + 1
             flag_points = flag_points + 1
@@ -630,6 +642,11 @@ def update_stocks():
             if data.invested is True:
                 x = x + 1
                 total_owned = x + owned_flags
+        if data.x_up >= 1:
+            buyFlagType[data.sector] = buyFlagType[data.sector] + 1
+            buy_points = buy_points + 1
+            if data.name == favorite:
+                fav_flags = fav_flags + 1
         if clocks() % 330 == 0:
             fake_news(data.name)
         data.set_last_price()
@@ -644,6 +661,9 @@ def update_stocks():
     if flag_points >= int(num_stocks/2):
         if owned_flags >= total_owned:
             flagType["flag"] = True
+    if buy_points >= int(num_stocks/2):
+        if fav_flags >= 1:
+            buyFlagType["flag"] = True
     if adjust == 1:  # Need a setting for this
         i = 0
         for data in stocks:
@@ -663,7 +683,10 @@ def update_stocks():
                 i = i+1
             else:
                 i = i+1
-    infoBar.insert(0, "Threat level: " + str(flag_points)+ "/" + str(int(num_stocks/2)))
+    if flag_points >= buy_points:
+        infoBar.insert(0, "Threat level: " + str(flag_points)+ "/" + str(int(num_stocks/2)))
+    else:
+        infoBar.insert(0, "Buy level:    " + str(buy_points) + "/" + str(int(num_stocks / 2)))
     totalEquity = totalEquity + buyPower
 
 
@@ -699,7 +722,7 @@ def get_current_stocks():
             if stocks[i].quantity > 0:
                 s.mixer.music.load("fuckme.mp3")
                 s.mixer.music.play()
-                if stocks[i].x_up == 1 and stocks[i].x_down == 1:
+                if stocks[i].max_up == 1 and stocks[i].x_down == 1:
                     quick_sell_all()
                     return get_current_stocks()
         if stocks[i].price > stocks[i].high:
@@ -714,6 +737,10 @@ def get_current_stocks():
         if stocks[i].price < stocks[i].hourly_low and stocks[i].crypto is True and stocks[i].invested is False:
             stocks[i].hourly_low = stocks[i].price
         if int(clock.split(":")[0]) >= 7 or (int(clock.split(":")[0]) == 6 and int(clock.split(":")[1]) >= 30):
+            if int(clock.split(":")[0]) == 6 and int(clock.split(":")[1]) <= 40:
+                if buyFlagType["flag"] is True:
+                    man_buy_all()
+                    return get_current_stocks()
             if flagType["flag"] is True:
                 man_sell_all()
                 return get_current_stocks()
@@ -838,7 +865,7 @@ def get_current_stocks():
 
 
 def customize_settings():
-    global percentage,lowPercentage,baseHigh,baseLow,slowCheck,medCheck,fastCheck,risk,crazyCrypto,baseLowCrypto,adjust
+    global percentage,lowPercentage,baseHigh,baseLow,slowCheck,medCheck,fastCheck,risk,crazyCrypto,baseLowCrypto,adjust, favorite, autoStart
     print("Welcome to my automated stock trading program!")
     print("This program uses a three check system to let the program know how valuable a stock is")
     print("First check is your sell_price/buy_price and second and third check is a percentage of that")
@@ -858,6 +885,8 @@ def customize_settings():
     print("crazyCrypto=\033[93m" + str(crazyCrypto) + "\033[0m  --Experimental Mode: Crypto Currency Only {False : 0}{True : 1}")
     print("baseLowCrypto=\033[93m" + str(baseLowCrypto) + "\033[0m  --Determine Cypto buy_price: Multiply by the high")
     print("adjust=\033[93m" + str(adjust) + "\033[0m  --Adjusts display dynamically {Manual : 0} {Dynamic : 1} {RevDynamic : 2}")
+    print("favorite=\033[93m" + str(favorite) + "\033[0m  --Set favorite stock for auto buy")
+    print("autoStart=\033[93m" + str(autoStart) + "\033[0m  --Set program autostart {On : 1} {Off : 0}")
     option = input("Would you like to adjust these?(y/n)")
     if option.lower() == "n":
         return
@@ -887,6 +916,10 @@ def customize_settings():
         baseLowCrypto = float(input("baseLowCrypto="))
     elif option.lower() == "adjust":
         adjust = int(input("adjust="))
+    elif option.lower() == "favorite":
+        favorite = str(input("favorite="))
+    elif option.lower() == "autostart":
+        autoStart = int(input("autoStart="))
     else:
         print("")
         baseLow = float(input("baseLow="))
@@ -902,19 +935,24 @@ def customize_settings():
         crazyCrypto = int(input("crazyCryto="))
         baseLowCrypto = float(input("baseLowCryto="))
         adjust = int(input("adjust="))
+        favorite = str(input("favorite="))
+        autoStart = int(input("adjust="))
         print("")
     update_settings()
 
 
 def read_settings():
-    global percentage,lowPercentage,baseHigh,baseLow,slowCheck,medCheck,fastCheck,risk,crazyCrypto,baseLowCrypto,adjust
+    global percentage,lowPercentage,baseHigh,baseLow,slowCheck,medCheck,fastCheck,risk,crazyCrypto,baseLowCrypto,adjust, favorite, autoStart
     file = open("settings.txt","r")
     content = file.readlines()
     file.close()
     setting = []
     for data in content:
         pair = data.split("=")
-        setting.append(float(pair[1]))
+        try:
+            setting.append(float(pair[1]))
+        except:
+            favorite = pair[1].strip("\n")
     if len(content) == 0:
         return
     percentage[0] = setting[0]
@@ -930,6 +968,7 @@ def read_settings():
     crazyCrypto = int(setting[10])
     baseLowCrypto = float(setting[11])
     adjust = int(setting[12])
+    autoStart = int(setting[13])
 
 
 def check_info():
@@ -949,7 +988,7 @@ def check_info():
 
 
 def update_settings():
-    global percentage, lowPercentage, baseHigh, baseLow, slowCheck, medCheck, fastCheck, risk, crazyCrypto, baseLowCrypto,adjust
+    global percentage, lowPercentage, baseHigh, baseLow, slowCheck, medCheck, fastCheck, risk, crazyCrypto, baseLowCrypto,adjust, favorite, autoStart
     file = open("settings.txt", "w")
     file.write("Percentage1="+ str(percentage[0]) + "\n")
     file.write("Percentage2="+ str(percentage[1])+ "\n")
@@ -964,6 +1003,8 @@ def update_settings():
     file.write("crazyCrypto="+ str(crazyCrypto) + "\n")
     file.write("baseLowCrypto=" + str(baseLowCrypto) + "\n")
     file.write("adjust=" + str(adjust) + "\n")
+    file.write("favorite=" + str(favorite) + "\n")
+    file.write("autoStart=" + str(autoStart) + "\n")
     file.close()
 
 

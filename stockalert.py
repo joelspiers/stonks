@@ -1,10 +1,12 @@
 import functions as f
-option = 1
+option = 0
 try:
     f.read_settings()
 except:
     print("\033[93mUsing Default Settings\033[0m*")
     f.update_settings()
+if f.autoStart == 1:
+    option = 1
 while True:
     stockCount = f.check_info()
     print("1: Stock Auto Buy and Sell")
