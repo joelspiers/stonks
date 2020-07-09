@@ -361,7 +361,7 @@ def man_buy_all(): # todo create a function that will buy on up trend day
         if buyFlagType[data.sector] <= 0:
             continue
         confirmation = "Nothing Happened"
-        if data.invested is True and data.name == favorite:  # re-add price >= buy price
+        if data.invested is False and data.name == favorite:  # re-add price >= buy price
             qty = int(diverse / data.price)
             confirmation = r.order_buy_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
         if confirmation != "Nothing Happened":
