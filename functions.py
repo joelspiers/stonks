@@ -737,7 +737,7 @@ def get_current_stocks():
         if stocks[i].price < stocks[i].hourly_low and stocks[i].crypto is True and stocks[i].invested is False:
             stocks[i].hourly_low = stocks[i].price
         if int(clock.split(":")[0]) >= 7 or (int(clock.split(":")[0]) == 6 and int(clock.split(":")[1]) >= 30):
-            if int(clock.split(":")[0]) == 6 and int(clock.split(":")[1]) <= 40:
+            if int(clock.split(":")[0]) == 6 and int(clock.split(":")[1]) <= 35:
                 if buyFlagType["flag"] is True:
                     man_buy_all()
                     return get_current_stocks()
