@@ -741,6 +741,8 @@ def get_current_stocks():
                 if buyFlagType["flag"] is True:
                     man_buy_all()
                     return get_current_stocks()
+            else:
+                stocks[i].x_up = 0
             if flagType["flag"] is True:
                 man_sell_all()
                 return get_current_stocks()
