@@ -623,6 +623,7 @@ def update_stocks():
     x = 0
     total_owned = 0
     num_stocks = len(stocks)
+    len_price = len(price)
     for data in stocks:
         if data.sector == "" and done is False:
             for sec in r.stocks.get_fundamentals(tick, info="sector"):
@@ -652,7 +653,8 @@ def update_stocks():
         data.set_last_price()
         data.set_gain()
         data.stop_watch()
-        data.set_price(float(price[i]))
+        if len_price == num_stocks:
+            data.set_price(float(price[i]))
         if data.lastPrice != 0:
             data.set_change()
         data.set_equity()
