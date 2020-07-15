@@ -1099,7 +1099,7 @@ def check_update():
     content1 = stock_alert.read()
     content2 = functions_file.read()
     current_size = len(current_version.content)
-    current_fun_size = len(functions)
+    current_fun_size = len(functions.content)
     total_current_size = current_fun_size + current_size
     for data in content1:
         current_stock = current_stock + 1
