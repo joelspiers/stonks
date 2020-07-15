@@ -1,5 +1,6 @@
 import functions as f
 option = 0
+f.check_update()
 try:
     f.read_settings()
 except:

@@ -18,6 +18,7 @@ baseLow = 1.01
 risk = 0.18
 adjust = 0
 buyMode = 0
+login = False
 autoStart = 0
 crazyCrypto = 1
 buyPower = 0.0
@@ -47,26 +48,28 @@ refresh()
 
 
 def login():
-    global buyPower, init_hold
+    global buyPower, init_hold, login
     username = ""
     password = ""
     content = ""
-    try:
-        file = open("credentials.txt", "r")
-        content = file.readlines()
-        username = content[0].strip("\n")
-        password = content[1].strip("\n")
-    except:
-        username = input("Robinhood username: ")
-        password = input("Robinhood password: ")
-        file = open("credentials.txt", "w")
-        file.write(username + "\n")
-        file.write(password + "\n")
-    r.login(username=username, password=password)
-    print("Getting account information..")
-    buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
-    update_holdings()
-    print("Success!")
+    if login is False:
+        try:
+            file = open("credentials.txt", "r")
+            content = file.readlines()
+            username = content[0].strip("\n")
+            password = content[1].strip("\n")
+        except:
+            username = input("Robinhood username: ")
+            password = input("Robinhood password: ")
+            file = open("credentials.txt", "w")
+            file.write(username + "\n")
+            file.write(password + "\n")
+        r.login(username=username, password=password)
+        print("Getting account information..")
+        buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
+        update_holdings()
+        print("Success!")
+        login = True
 
 
 def update_holdings():
@@ -351,7 +354,7 @@ def man_sell_all():
         return confirmation
 
 
-def man_buy_all(): # todo create a function that will buy on up trend day
+def man_buy_all():  # todo create a function that will buy on up trend day
     refresh()
     global stocks, flagType, crazyCrypto, favorite, risk, totalEquity, buyPower
     success = 0
@@ -375,7 +378,7 @@ def man_buy_all(): # todo create a function that will buy on up trend day
         print(str(success)+" sold successfully!")
         print(str(failed)+" attempt failed")
         print("")
-        time.sleep(30)
+        time.sleep(15)
         reset()
         update_holdings()
         return confirmation
@@ -1074,14 +1077,29 @@ def customize_triggers():
                 tick = input("Enter a ticker: ")
                 refresh()
                 move_watchlist(tick)
-        elif option ==5:
+        elif option == 5:
             refresh()
             break
-        elif option ==6:
+        elif option == 6:
             refresh()
             fake_news(input("Ticker: "))
         else:
             print("Unknown Error Occured")
+
+
+def check_update():
+    current_size = 0
+    current_stock = 0
+    current_version = requests.get("https://raw.github.com/joelspiers/stonks/master/stockalert.py")
+    stock_alert = open("stockalert.py", "rb")
+    content = stock_alert.read()
+    current_size = len(current_version.content)
+    for data in content:
+        current_stock = current_stock + 1
+    print(current_size)
+    print(current_stock)
+    time.sleep(10)
+    stock_alert.close()
 
 
 def get_update():
