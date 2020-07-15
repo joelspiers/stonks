@@ -534,13 +534,12 @@ def fake_news(ticker):
 
 def get_account_info():
     while True:
-        print("Load Account balance")
-        print("Get order history")
-        print("Total Investing")
+        print("Getting Options Info")
         account = r.profiles.load_account_profile(info=None)
         port = r.profiles.load_portfolio_profile(info=None)
-        print(account)
-        print(port)
+        ##print(account)
+        ##print(port)
+        print(r.options.get_open_option_positions())
         input("")
 
 
