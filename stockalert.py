@@ -1,6 +1,6 @@
 import functions as f
 option = 0
-f.check_update()
+update = f.check_update()
 try:
     f.read_settings()
 except:
@@ -11,7 +11,10 @@ if f.autoStart == 1:
 while True:
     stockCount = f.check_info()
     print("1: Stock Auto Buy and Sell")
-    print("2: Update Program")
+    if update is True:
+        print("2: Update Available")
+    else:
+        print("2: Up-to-Date")
     print("3: Load Account Info")
     print("4: Set custom triggers")
     print("5: Exit")

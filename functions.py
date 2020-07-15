@@ -1096,11 +1096,11 @@ def check_update():
     current_size = len(current_version.content)
     for data in content:
         current_stock = current_stock + 1
-    print(current_size)
-    print(current_stock)
-    time.sleep(10)
     stock_alert.close()
-
+    if current_size == current_stock:
+        return False
+    else:
+        return True
 
 def get_update():
     print("*Backing up old files")
