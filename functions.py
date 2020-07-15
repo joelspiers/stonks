@@ -1108,10 +1108,14 @@ def check_update():
     stock_alert.close()
     functions_file.close()
     total_file_size = current_stock + fun_size
+    print(total_file_size)
+    print(total_current_size)
+    time.sleep(10)
     if total_file_size == total_current_size:
         return False
     else:
         return True
+
 
 def get_update():
     print("*Backing up old files")
