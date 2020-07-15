@@ -6,7 +6,7 @@ try:
 except:
     print("\033[93mUsing Default Settings\033[0m*")
     f.update_settings()
-if f.autoStart == 1:
+if f.v.autoStart == 1:
     option = 1
 while True:
     stockCount = f.check_info()
