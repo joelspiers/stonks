@@ -1090,14 +1090,25 @@ def customize_triggers():
 def check_update():
     current_size = 0
     current_stock = 0
+    fun_size = 0
+    current_fun_size = 0
     current_version = requests.get("https://raw.github.com/joelspiers/stonks/master/stockalert.py")
+    functions = requests.get("https://raw.github.com/joelspiers/stonks/master/functions.py")
     stock_alert = open("stockalert.py", "rb")
-    content = stock_alert.read()
+    functions_file = open("functions.py", "rb")
+    content1 = stock_alert.read()
+    content2 = functions_file.read()
     current_size = len(current_version.content)
-    for data in content:
+    current_fun_size = len(functions)
+    total_current_size = current_fun_size + current_size
+    for data in content1:
         current_stock = current_stock + 1
+    for data in content2:
+        fun_size = fun_size + 1
     stock_alert.close()
-    if current_size == current_stock:
+    functions_file.close()
+    total_file_size = current_stock + fun_size
+    if total_file_size == total_current_size:
         return False
     else:
         return True
