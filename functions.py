@@ -318,6 +318,7 @@ def quick_sell_all():
     for data in v.stocks:
         if data.quantity > 0:
             confirmation = r.order_sell_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
+            data.quantity = 0
     reset()
     update_holdings()
     return confirmation
@@ -333,6 +334,7 @@ def man_sell_all():
         confirmation = "Nothing Happened"
         if data.invested is True and data.price >= data.buy_price:  # re-add price >= buy price
             confirmation = r.order_sell_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
+            data.quantity = 0
             v.crazyCrypto = 1  # stop buying of stocks while market crash
         if confirmation != "Nothing Happened":
             success = success + 1
@@ -345,7 +347,7 @@ def man_sell_all():
         print(str(success)+" sold successfully!")
         print(str(failed)+" attempt failed")
         print("")
-        time.sleep(30)
+        time.sleep(15)
         reset()
         update_holdings()
         return confirmation
