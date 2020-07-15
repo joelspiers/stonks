@@ -18,7 +18,7 @@ baseLow = 1.01
 risk = 0.18
 adjust = 0
 buyMode = 0
-login = False
+log_in = False
 autoStart = 0
 crazyCrypto = 1
 buyPower = 0.0
@@ -48,11 +48,11 @@ refresh()
 
 
 def login():
-    global buyPower, init_hold, login
+    global buyPower, init_hold, log_in
     username = ""
     password = ""
     content = ""
-    if login is False:
+    if log_in is False:
         try:
             file = open("credentials.txt", "r")
             content = file.readlines()
@@ -69,7 +69,7 @@ def login():
         buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
         update_holdings()
         print("Success!")
-        login = True
+        log_in = True
 
 
 def update_holdings():
