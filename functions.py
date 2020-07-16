@@ -73,7 +73,7 @@ def login():
         v.buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
         update_holdings()
         print("Success!")
-        log_in = True
+        v.log_in = True
 
 
 def update_holdings():
@@ -328,10 +328,10 @@ def man_sell_all():
     refresh()
     success = 0
     failed = 0
+    confirmation = "Nothing Happened"
     for data in v.stocks:
         if v.flagType[data.sector] <= 0:
             continue
-        confirmation = "Nothing Happened"
         if data.invested is True and data.price >= data.buy_price:  # re-add price >= buy price
             confirmation = r.order_sell_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
             data.quantity = 0
@@ -344,24 +344,24 @@ def man_sell_all():
             v.flagType["flag"] = True
         else:
             v.flagType["flag"] = False
-        print(str(success)+" sold successfully!")
-        print(str(failed)+" attempt failed")
-        print("")
-        time.sleep(15)
-        reset()
-        update_holdings()
-        return confirmation
+    print(str(success)+" sold successfully!")
+    print(str(failed)+" attempt failed")
+    print("")
+    time.sleep(5)
+    reset()
+    update_holdings()
+    return confirmation
 
 
 def man_buy_all():  # todo create a function that will buy on up trend day
     refresh()
     success = 0
     failed = 0
+    confirmation = "Nothing Happened"
     diverse = v.totalEquity * v.risk
     for data in v.stocks:
         if v.buyFlagType[data.sector] <= 0:
             continue
-        confirmation = "Nothing Happened"
         if data.invested is False and data.name == v.favorite:  # re-add price >= buy price
             qty = int(diverse / data.price)
             confirmation = r.order_buy_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
@@ -373,13 +373,13 @@ def man_buy_all():  # todo create a function that will buy on up trend day
             v.buyFlagType["flag"] = True
         else:
             v.buyFlagType["flag"] = False
-        print(str(success)+" sold successfully!")
-        print(str(failed)+" attempt failed")
-        print("")
-        time.sleep(15)
-        reset()
-        update_holdings()
-        return confirmation
+    print(str(success)+" sold successfully!")
+    print(str(failed)+" attempt failed")
+    print("")
+    time.sleep(15)
+    reset()
+    update_holdings()
+    return confirmation
 
 
 def buy_low(a_stock):
@@ -586,10 +586,10 @@ def update_stocks():
         for data in tickers:
             if data == "BTC" or data == "LTC":
                 v.stocks.insert(0, Stock(data))
-            else: # making list while separating crypto for price
+            else:  # making list while separating crypto for price
                 v.stocks.append(Stock(data))
                 tick.append(data)
-    c=0
+    c = 0
     v.totalEquity = 0
     temp = None
     stock_type = []
@@ -769,7 +769,7 @@ def get_current_stocks():
                     print(buy_low(best))  # Buy
         last_eye = i
         if (i+1) % 5 == 0 and i < 16:
-            i= i - 4
+            i = i - 4
             if seconds[1]-seconds[0] > 5 or seconds[1] == 0:
                 first = "\033[93m" if v.stocks[i].quantity > 0 else "\033[0m"
                 seconds[1] = 0
@@ -856,6 +856,8 @@ def get_current_stocks():
         if i >= len(v.stocks) - 1:
             i = -1
             debug()
+            man_sell_all()
+            return get_current_stocks()
             if int(v.clock.split(":")[1]) % 5 == 0 and len(v.infoBar) > 1:
                 v.infoBar.pop(0)
             update_stocks()
