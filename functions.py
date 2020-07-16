@@ -856,8 +856,6 @@ def get_current_stocks():
         if i >= len(v.stocks) - 1:
             i = -1
             debug()
-            man_sell_all()
-            return get_current_stocks()
             if int(v.clock.split(":")[1]) % 5 == 0 and len(v.infoBar) > 1:
                 v.infoBar.pop(0)
             update_stocks()
