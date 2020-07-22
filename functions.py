@@ -79,6 +79,7 @@ def login():
 def update_holdings():
     v.init_hold = r.account.build_holdings(with_dividends=False)
     v.init_crypto = r.crypto.get_crypto_positions(info=None)
+    v.buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
 
 
 def clocks():
@@ -581,6 +582,11 @@ def update_stocks():
         for data in v.stocks:
             if data.crypto is False:
                 tick.append(data.name)
+                for invested in tickers:
+                    if invested != data.name:
+                        data.quantity = 0
+                        data.equity = 0
+
     else:  # remake stocks list
         v.stocks.clear()
         for data in tickers:
