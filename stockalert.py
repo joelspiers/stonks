@@ -44,7 +44,7 @@ while True:
         f.get_account_info()
     elif option == 4:
         f.customize_triggers()
-    elif option >=5:
+    elif option >= 5:
         break
     else:
         print("Error Occurred")

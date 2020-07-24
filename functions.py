@@ -32,6 +32,17 @@ class Var:
     updatedHolds = False
     system = ""
     favorite = "CZR"
+    price = []
+    stock_iterator = 0
+    total_owned = 0
+    buy_points = 0
+    flag_points = 0
+    owned_flags = 0
+    fav_flags = 0
+    num_stocks = 0
+    len_price = 0
+    tick = []
+    tickers = {}
     clock = time.ctime().split()[3]
     flagType = {"flag": False, "type": 0}
     buyFlagType = {"flag": False, "type": 0}
@@ -193,7 +204,7 @@ class Stock:
         self.change = 0
         self.points = 0
         self.hourly_low = self.price
-        self.sector = ""
+        self.sector = r.stocks.get_fundamentals(name, info="sector")[0]
         self.news = len(r.stocks.get_news(name, info=None))
         self.equity = self.quantity*self.price
         self.equityChange = self.equity - self.quantity*self.buy_price
@@ -272,6 +283,16 @@ class Stock:
             self.seconds = 0
         else:
             self.seconds = clocks()+1-self.start_time
+
+    def update(self, data):
+        self.set_last_price()
+        self.set_gain()
+        self.stop_watch()
+        if v.len_price == v.num_stocks:
+            self.set_price(float(data))
+        if self.lastPrice != 0:
+            self.set_change()
+        self.set_equity()
 
 
 def sell_high(a_stock):
@@ -594,44 +615,55 @@ def auto_buy__sell__crypto():
 #    print(flagType[stocks[2].sector])
 
 
-def update_stocks():
-    tickers = {}
-    if clocks() % 300 == 0:
-        update_holdings()
-    for data in v.init_crypto:  # Grabs invested Crypto tickers
-        if float(data["cost_bases"][0]["direct_quantity"]) > 0:
-            tickers[data["currency"]["code"]] = ""
-    tick = []
-    for data in v.init_hold:  # Grabs invested Stocks
-        tickers[data] = ""
-    w_list = watch_list()
-    for data in w_list:  # fills list with watchlist
-        tickers[data] = ""
-    if len(v.stocks) == len(tickers):  # if already initialized
+def sort():
+    if v.adjust == 1:  # Need a setting for this
+        i = 0
         for data in v.stocks:
-            if data.crypto is False:
-                tick.append(data.name)
-                for invested in tickers:
-                    if invested != data.name:
-                        data.quantity = 0
-                        data.equity = 0
+            if i == len(v.stocks)-2:
+                break
+            if data.crypto is True:
+                i = i+1
+                continue
+            elif v.stocks[i+1].quantity > 0:
+                v.stocks[i], v.stocks[i+1] = v.stocks[i+1], v.stocks[i]
+                v.tick[i], v.tick[i + 1] = v.tick[i + 1], v.tick[i]
+                i = i+1
+            elif v.stocks[i].gain < v.stocks[i+1].gain:
+                if v.stocks[i].quantity > 0:
+                    i = i+1
+                    continue
+                v.stocks[i], v.stocks[i+1] = v.stocks[i+1], v.stocks[i]
+                v.tick[i], v.tick[i + 1] = v.tick[i + 1], v.tick[i]
+                i = i+1
+            else:
+                i = i+1
 
-    else:  # remake stocks list
-        for data in v.options_data:
-            v.options.append(Options(data))
-        v.stocks.clear()
-        for data in tickers:
-            if data == "BTC" or data == "LTC":
-                v.stocks.insert(0, Stock(data))
-            else:  # making list while separating crypto for price
-                v.stocks.append(Stock(data))
-                tick.append(data)
-    c = 0
-    v.totalEquity = 0
-    temp = None
+
+def initialize():
+    for data in v.options_data:
+        v.options.append(Options(data))
+    v.stocks.clear()
+    for data in v.tickers:
+        if data == "BTC" or data == "LTC":
+            v.stocks.insert(0, Stock(data))
+        else:  # making list while separating crypto for price
+            v.stocks.append(Stock(data))
+            v.tick.append(data)
+
+
+def check_invested():
+    for data in v.stocks:
+        if data.crypto is False:
+            for invested in v.tickers:
+                if invested != data.name:
+                    data.quantity = 0
+                    data.equity = 0
+
+
+def sort_price():
     stock_type = []
-    done = False
-    price = r.stocks.get_latest_price(tick, includeExtendedHours=True)
+    temp = None
+    c = 0
     for data in v.stocks:
         if data.crypto is True:
             for x in v.init_crypto:
@@ -644,88 +676,89 @@ def update_stocks():
                     data.invested = False
             if temp is None:
                 temp = data.price
-            price.insert(c, temp)
+            v.price.insert(c, temp)
             stock_type.insert(c, "Crypto Currency")
-            c = c+1
+            c = c + 1
         else:
             break
-    i = 0
-    buy_points = 0
-    flag_points = 0
-    owned_flags = 0
-    fav_flags = 0
+
+
+def threat_buy(data):
     x = 0
-    total_owned = 0
-    num_stocks = len(v.stocks)
-    len_price = len(price)
+    v.flagType[data.sector] = 0
+    v.buyFlagType[data.sector] = 0
+    if data.x_down >= 2:
+        v.flagType[data.sector] = v.flagType[data.sector] + 1
+        v.flag_points = v.flag_points + 1
+        if data.invested is True:
+            v.owned_flags = v.owned_flags + 1
+    else:
+        v.flagType[data.sector] = v.flagType[data.sector] - 1
+        if data.invested is True:
+            x = x + 1
+            v.total_owned = x + v.owned_flags
+    if data.x_up >= 1:
+        v.buyFlagType[data.sector] = v.buyFlagType[data.sector] + 1
+        v.buy_points = v.buy_points + 1
+        if data.name == v.favorite:
+            v.fav_flags = v.fav_flags + 1
+
+    return data
+
+
+def variable_reset():
+    v.stock_iterator = 0
+    v.total_owned = 0
+    v.buy_points = 0
+    v.flag_points = 0
+    v.owned_flags = 0
+    v.fav_flags = 0
+    v.totalEquity = 0
+    v.num_stocks = len(v.stocks)
+    v.len_price = len(v.price)
+
+
+def update_info_bar():
+    if v.flag_points >= int(v.num_stocks/2):
+        if v.owned_flags >= v.total_owned:
+            v.flagType["flag"] = True
+    if v.buy_points >= int(v.num_stocks/2):
+        if v.fav_flags >= 1:
+            v.buyFlagType["flag"] = True
+    if v.flag_points >= v.buy_points:
+        v.infoBar.insert(0, "Threat level: " + str(v.flag_points) + "/" + str(int(v.num_stocks/2)))
+    else:
+        v.infoBar.insert(0, "Buy level:    " + str(v.buy_points) + "/" + str(int(v.num_stocks/2)))
+
+
+def update_stocks():
+    for data in v.init_crypto:  # Grabs invested Crypto tickers
+        if float(data["cost_bases"][0]["direct_quantity"]) > 0:
+            v.tickers[data["currency"]["code"]] = ""
+    for data in v.init_hold:  # Grabs invested Stocks
+        v.tickers[data] = ""
+    w_list = watch_list()
+    for data in w_list:  # fills list with watchlist
+        v.tickers[data] = ""
+    if len(v.stocks) == len(v.tickers):  # if already initialized
+        check_invested()
+    else:  # remake stocks list
+        initialize()
+
+    v.price = r.stocks.get_latest_price(v.tick, includeExtendedHours=True)
+    sort_price()
+    variable_reset()
     for data in v.stocks:
-        if data.sector == "" and done is False:
-            for sec in r.stocks.get_fundamentals(tick, info="sector"):
-                stock_type.append(sec)
-            done = True
-        if done is True:
-            data.sector = stock_type[i]
-            v.flagType[data.sector] = 0
-            v.buyFlagType[data.sector] = 0
-        if data.x_down >= 2:
-            v.flagType[data.sector] = v.flagType[data.sector] + 1
-            flag_points = flag_points + 1
-            if data.invested is True:
-                owned_flags = owned_flags + 1
-        else:
-            v.flagType[data.sector] = v.flagType[data.sector] - 1
-            if data.invested is True:
-                x = x + 1
-                total_owned = x + owned_flags
-        if data.x_up >= 1:
-            v.buyFlagType[data.sector] = v.buyFlagType[data.sector] + 1
-            buy_points = buy_points + 1
-            if data.name == v.favorite:
-                fav_flags = fav_flags + 1
+        data.update(v.price[v.stock_iterator])
+        data = threat_buy(data)
         if clocks() % 330 == 0:
             fake_news(data.name)
-        data.set_last_price()
-        data.set_gain()
-        data.stop_watch()
-        if len_price == num_stocks:
-            data.set_price(float(price[i]))
-        if data.lastPrice != 0:
-            data.set_change()
-        data.set_equity()
         v.totalEquity = v.totalEquity + data.equity
-        i = i+1
-    if flag_points >= int(num_stocks/2):
-        if owned_flags >= total_owned:
-            v.flagType["flag"] = True
-    if buy_points >= int(num_stocks/2):
-        if fav_flags >= 1:
-            v.buyFlagType["flag"] = True
-    if v.adjust == 1:  # Need a setting for this
-        i = 0
-        for data in v.stocks:
-            if i == len(v.stocks)-2:
-                break
-            if data.crypto is True:
-                i = i+1
-                continue
-            elif v.stocks[i+1].quantity > 0:
-                v.stocks[i], v.stocks[i+1] = v.stocks[i+1], v.stocks[i]
-                i = i+1
-            elif v.stocks[i].gain < v.stocks[i+1].gain:
-                if v.stocks[i].quantity > 0:
-                    i = i+1
-                    continue
-                v.stocks[i], v.stocks[i+1] = v.stocks[i+1], v.stocks[i]
-                i = i+1
-            else:
-                i = i+1
-    if flag_points >= buy_points:
-        v.infoBar.insert(0, "Threat level: " + str(flag_points)+ "/" + str(int(num_stocks/2)))
-    else:
-        v.infoBar.insert(0, "Buy level:    " + str(buy_points) + "/" + str(int(num_stocks / 2)))
+        v.stock_iterator = v.stock_iterator + 1
     for data in v.options:
         v.totalEquity = v.totalEquity + (data.mark_price*data.quantity*100)
     v.totalEquity = v.totalEquity + v.buyPower
+    sort()
 
 
 def get_current_stocks():
@@ -1017,11 +1050,11 @@ def check_info():
         content = file.readlines()
     except:
         return 0
-    clen = len(content)
-    if clen < 15:
+    c_len = len(content)
+    if c_len < 15:
         print("You need at least 15 stocks in your watchlist")
-        print("Stocks in watchlist: " + str(clen) + "/15")
-    return clen
+        print("Stocks in watchlist: " + str(c_len) + "/15")
+    return c_len
 
 
 def update_settings():
@@ -1046,6 +1079,8 @@ def update_settings():
 
 def reset():
     v.stocks.clear()
+    v.options.clear()
+    v.tick.clear()
 
 
 def debug():
