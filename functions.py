@@ -10,7 +10,7 @@ s.mixer.init()
 
 class Var:
     stocks = []
-    options = []
+    option = []
     infoBar = [""]
     totalEquity = 0.0
     slowCheck, medCheck, fastCheck = 1800, 900, 450
@@ -362,10 +362,16 @@ def sell_high(a_stock):
 
 def quick_sell_all():
     refresh()
+    confirmation = "Nothing Happened"
     for data in v.stocks:
-        if data.quantity > 0:
+        if data.quantity > 0 and data.price > data.buy_price:
             confirmation = r.order_sell_market(data.name, data.quantity, timeInForce="gfd", extendedHours=True)
             data.quantity = 0
+       # elif data.quantity < 0:
+          #  for contract in v.options:
+            #    if contract.name == data.name and contract.mark_price > contract.break_even:
+                    ##r.order_sell_option_limit("close", "debit", contract.mark_price, contract.quantity, expiredate, contract.mark_price, optionType="call", timeInForce="gtc")
+
     reset()
     update_holdings()
     return confirmation
@@ -641,7 +647,7 @@ def sort():
 
 def initialize():
     for data in v.options_data:
-        v.options.append(Options(data))
+        v.option.append(Options(data))
     v.stocks.clear()
     for data in v.tickers:
         if data == "BTC" or data == "LTC":
@@ -744,7 +750,6 @@ def update_stocks():
         check_invested()
     else:  # remake stocks list
         initialize()
-
     v.price = r.stocks.get_latest_price(v.tick, includeExtendedHours=True)
     sort_price()
     variable_reset()
@@ -755,9 +760,11 @@ def update_stocks():
             fake_news(data.name)
         v.totalEquity = v.totalEquity + data.equity
         v.stock_iterator = v.stock_iterator + 1
-    for data in v.options:
+    for data in v.option:
+        data.update()
         v.totalEquity = v.totalEquity + (data.mark_price*data.quantity*100)
     v.totalEquity = v.totalEquity + v.buyPower
+    update_info_bar()
     sort()
 
 
@@ -1079,7 +1086,7 @@ def update_settings():
 
 def reset():
     v.stocks.clear()
-    v.options.clear()
+    v.option.clear()
     v.tick.clear()
 
 
