@@ -10,6 +10,7 @@ s.mixer.init()
 
 class Var:
     stocks = []
+    options = []
     infoBar = [""]
     totalEquity = 0.0
     slowCheck, medCheck, fastCheck = 1800, 900, 450
@@ -27,9 +28,10 @@ class Var:
     buyPower = 0.0
     init_hold = {}
     init_crypto = []
+    options_data = []
     updatedHolds = False
     system = ""
-    favorite = "ERI"
+    favorite = "CZR"
     clock = time.ctime().split()[3]
     flagType = {"flag": False, "type": 0}
     buyFlagType = {"flag": False, "type": 0}
@@ -80,6 +82,7 @@ def update_holdings():
     v.init_hold = r.account.build_holdings(with_dividends=False)
     v.init_crypto = r.crypto.get_crypto_positions(info=None)
     v.buyPower = float(r.profiles.load_account_profile(info="portfolio_cash"))
+    v.options_data = r.options.get_open_option_positions(info=None)
 
 
 def clocks():
@@ -88,6 +91,28 @@ def clocks():
     seconds = seconds + int(v.clock.split(":")[1])*60
     seconds = seconds + int(v.clock.split(":")[2])
     return seconds
+
+
+class Options:
+    def __init__(self, open_option):
+        print(" * adding " + open_option["chain_symbol"] + " option")
+        self.options_data = r.options.get_option_market_data_by_id(open_option["option_id"], info=None)
+        self.mark_price = float(self.options_data["adjusted_mark_price"])
+        self.break_even = float(self.options_data["break_even_price"])
+        self.high_price = float(self.options_data["high_price"])
+        self.low_price = float(self.options_data["low_price"])
+        self.name = open_option["chain_symbol"]
+        self.total_cost = float(open_option["average_price"])
+        self.quantity = float(open_option["quantity"])
+        self.build_data = open_option
+
+    def update(self):
+        self.mark_price = float(self.options_data["adjusted_mark_price"])
+        self.break_even = float(self.options_data["break_even_price"])
+        self.high_price = float(self.options_data["high_price"])
+        self.low_price = float(self.options_data["low_price"])
+        self.total_cost = float(self.build_data["average_price"])
+        self.quantity = float(self.build_data["quantity"])
 
 
 class Stock:
@@ -534,13 +559,17 @@ def fake_news(ticker):
 
 
 def get_account_info():
+    login()
     while True:
         print("Getting Options Info")
         account = r.profiles.load_account_profile(info=None)
         port = r.profiles.load_portfolio_profile(info=None)
         ##print(account)
         ##print(port)
-        print(r.options.get_open_option_positions())
+        id = r.options.get_open_option_positions(info="option_id")[0]
+        print(r.options.get_open_option_positions(info=None)[0])
+        print()
+        print(r.options.get_option_market_data_by_id(id,info=None))
         input("")
 
 
@@ -588,6 +617,8 @@ def update_stocks():
                         data.equity = 0
 
     else:  # remake stocks list
+        for data in v.options_data:
+            v.options.append(Options(data))
         v.stocks.clear()
         for data in tickers:
             if data == "BTC" or data == "LTC":
@@ -692,6 +723,8 @@ def update_stocks():
         v.infoBar.insert(0, "Threat level: " + str(flag_points)+ "/" + str(int(num_stocks/2)))
     else:
         v.infoBar.insert(0, "Buy level:    " + str(buy_points) + "/" + str(int(num_stocks / 2)))
+    for data in v.options:
+        v.totalEquity = v.totalEquity + (data.mark_price*data.quantity*100)
     v.totalEquity = v.totalEquity + v.buyPower
 
 
