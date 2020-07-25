@@ -751,8 +751,8 @@ def update_stocks():
     else:  # remake stocks list
         initialize()
     v.price = r.stocks.get_latest_price(v.tick, includeExtendedHours=True)
-    if len(v.option) > 0:
-        v.options_data = r.options.get_open_option_positions(info=None)
+    if len(v.option) > 0 and (clocks() % 30) == 0:
+        update_holdings()
     sort_price()
     variable_reset()
     for data in v.stocks:
