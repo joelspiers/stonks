@@ -660,7 +660,7 @@ def initialize():
 def check_invested():
     for data in v.stocks:
         if data.crypto is False:
-            for invested in v.tickers:
+            for invested in v.init_hold:
                 if invested != data.name:
                     data.quantity = 0
                     data.equity = 0
